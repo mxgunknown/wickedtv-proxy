@@ -1,27 +1,34 @@
-const express = require('express');
-const cors = require('cors');
-const fetch = require('node-fetch');
-
+const express = require("express");
+const request = require("request");
 const app = express();
-const PORT = process.env.PORT || 3000;
-const API_BASE = 'http://playwithme.pw';
 
-app.use(cors());
-
-app.use('/live/:username/:password/:streamId', async (req, res) => {
-  const { username, password, streamId } = req.params;
-  const format = req.query.format || 'm3u8';
-
-  const proxiedUrl = `${API_BASE}/live/${username}/${password}/${streamId}.${format}`;
-
-  try {
-    const response = await fetch(proxiedUrl);
-    if (!response.ok) throw new Error('Fetch failed');
-    res.set('Content-Type', response.headers.get('content-type'));
-    response.body.pipe(res);
-  } catch (err) {
-    res.status(500).send('Failed to proxy stream');
-  }
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  next();
 });
 
-app.listen(PORT, () => console.log(`Proxy server running on port ${PORT}`));
+app.get("*", (req, res) => {
+  const targetUrl = "http://playwithme.pw" + req.originalUrl;
+
+  req.pipe(
+    request({
+      url: targetUrl,
+      headers: {
+        "User-Agent": req.headers["user-agent"] || "Mozilla/5.0",
+        "Host": "playwithme.pw",
+      }
+    }).on("response", (response) => {
+      res.setHeader("Content-Type", response.headers["content-type"] || "application/octet-stream");
+    }).on("error", (err) => {
+      console.error("Proxy error:", err);
+      res.status(500).send("Proxy failed.");
+    })
+  ).pipe(res);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Proxy listening on port ${PORT}`);
+});
