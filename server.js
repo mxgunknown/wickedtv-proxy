@@ -1,25 +1,36 @@
-const express = require('express');
-const request = require('request');
+const express = require("express");
+const request = require("request");
+const cors = require("cors");
 const app = express();
-const PORT = process.env.PORT || 3000;
+
+app.use(cors());
 
 app.use((req, res) => {
-  const url = `http://playwithme.pw${req.url}`;
+  const targetUrl = `http://playwithme.pw${req.originalUrl}`;
+
   const headers = {
-    'User-Agent': req.headers['user-agent'] || 'Mozilla/5.0',
-    'Referer': 'http://playwithme.pw/',
-    'Origin': 'http://playwithme.pw',
+    "User-Agent": "Lavf/58.45.100", // Simulates ffmpeg or Android HLS clients
+    "Origin": "http://playwithme.pw",
+    "Referer": "http://playwithme.pw",
+    "Host": "playwithme.pw"
   };
 
   req.pipe(
-    request({ url, headers })
-      .on('response', response => {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Content-Type', response.headers['content-type']);
-      })
+    request({
+      url: targetUrl,
+      headers: headers
+    }).on("response", (proxyRes) => {
+      // Fix content-type for TS or M3U8
+      const contentType = proxyRes.headers["content-type"];
+      if (contentType) {
+        res.setHeader("Content-Type", contentType);
+      }
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    })
   ).pipe(res);
 });
 
-app.listen(PORT, () => {
-  console.log(`Proxy running on port ${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Proxy server running on port ${port}`);
 });
