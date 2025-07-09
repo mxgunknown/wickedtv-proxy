@@ -5,8 +5,10 @@ const app = express();
 
 app.use(cors());
 
-app.use("/", (req, res) => {
-  const targetUrl = "http://playwithme.pw" + req.originalUrl;
+// Route ALL paths including /live and /hls
+app.use("/*", (req, res) => {
+  // Forward to full origin path
+  const upstreamUrl = `http://playwithme.pw${req.originalUrl}`;
 
   const headers = {
     "User-Agent":
@@ -16,21 +18,24 @@ app.use("/", (req, res) => {
     "Host": "playwithme.pw",
     "Accept": "*/*",
     "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9"
+    "Accept-Language": "en-US,en;q=0.9",
   };
 
-  req.pipe(
-    request({
-      url: targetUrl,
-      method: req.method,
-      headers,
-    }).on("response", function (response) {
+  request({ url: upstreamUrl, headers })
+    .on("response", (response) => {
       res.setHeader("Access-Control-Allow-Origin", "*");
+      if (response.headers["content-type"]) {
+        res.setHeader("Content-Type", response.headers["content-type"]);
+      }
     })
-  ).pipe(res);
+    .on("error", (err) => {
+      console.error("Proxy error:", err);
+      res.status(502).send("Proxy fetch failed");
+    })
+    .pipe(res);
 });
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Proxy server running on port ${port}`);
+  console.log(`Proxy running on port ${port}`);
 });
