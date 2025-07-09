@@ -10,13 +10,13 @@ app.use("/", (req, res) => {
 
   const headers = {
     "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
     "Referer": "http://playwithme.pw/",
     "Origin": "http://playwithme.pw",
     "Host": "playwithme.pw",
     "Accept": "*/*",
     "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Language": "en-US,en;q=0.9"
   };
 
   req.pipe(
